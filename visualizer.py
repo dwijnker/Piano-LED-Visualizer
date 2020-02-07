@@ -673,6 +673,17 @@ class MenuLCD:
             elif(choice == "Very slow"):
                 ledsettings.fadingspeed = 3
             usersettings.change_setting_value("fadingspeed", ledsettings.fadingspeed)
+        
+        if(location == "Shimmer"):
+            ledsettings.mode = "Shimmer"
+            usersettings.change_setting_value("mode", ledsettings.mode)
+            if(choice == "Fast"):
+                ledsettings.fadingspeed = 50
+            elif(choice == "Medium"):
+                ledsettings.fadingspeed = 30
+            elif(choice == "Slow"):
+                ledsettings.fadingspeed = 15
+            usersettings.change_setting_value("fadingspeed", ledsettings.fadingspeed)
                 
         if(location == "Light_mode"):
             ledsettings.mode = "Normal"
@@ -1115,7 +1126,7 @@ class LedSettings:
             self.color_mode = self.sequences_tree.getElementsByTagName("sequence_"+str(self.sequence_number))[0].getElementsByTagName("step_"+str(self.step_number))[0].getElementsByTagName("color")[0].firstChild.nodeValue
             self.mode = self.sequences_tree.getElementsByTagName("sequence_"+str(self.sequence_number))[0].getElementsByTagName("step_"+str(self.step_number))[0].getElementsByTagName("light_mode")[0].firstChild.nodeValue
             
-            if(self.mode == "Velocity" or self.mode == "Fading"):
+            if(self.mode == "Velocity" or self.mode == "Fading" or self.mode == "Shimmer"):
                 self.fadingspeed = self.sequences_tree.getElementsByTagName("sequence_"+str(self.sequence_number))[0].getElementsByTagName("step_"+str(self.step_number))[0].getElementsByTagName("speed")[0].firstChild.nodeValue
                 if(self.mode == "Fading"):            
                     if(self.fadingspeed == "Fast"):
@@ -1136,6 +1147,17 @@ class LedSettings:
                         self.fadingspeed = 6
                     elif(self.fadingspeed == "Very slow"):
                         self.fadingspeed = 3
+
+                if(self.mode == "Shimmer"):                
+                    if(self.fadingspeed == "Fast"):
+                        self.fadingspeed = 10
+                    elif(self.fadingspeed == "Medium"):
+                        self.fadingspeed = 8
+                    elif(self.fadingspeed == "Slow"):
+                        self.fadingspeed = 6
+                    elif(self.fadingspeed == "Very slow"):
+                        self.fadingspeed = 3
+
             if(self.color_mode == "RGB"):            
                 self.color_mode = "Single"
                 self.red = int(self.sequences_tree.getElementsByTagName("sequence_"+str(self.sequence_number))[0].getElementsByTagName("step_"+str(self.step_number))[0].getElementsByTagName("Red")[0].firstChild.nodeValue)
@@ -1285,6 +1307,9 @@ ledsettings = LedSettings()
 keylist = [0] * 176
 keylist_status = [0] * 176
 keylist_color = [0] * 176
+keylist_fade = [0] * 176
+
+
 
 z = 0
 display_cycle = 0
@@ -1374,7 +1399,7 @@ while True:
                 
     timeshift = (time.time() - timeshift_start) * ledsettings.rainbow_timeshift
       
-    if(ledsettings.mode == "Fading" or ledsettings.mode == "Velocity"):                
+    if(ledsettings.mode == "Fading" or ledsettings.mode == "Velocity" or ledsettings.mode == "Shimmer"):                
         n = 0
         for note in keylist:            
             if(ledsettings.color_mode == "Multicolor"):
@@ -1390,21 +1415,22 @@ while True:
                 green = get_rainbow_colors(int((int(n) + ledsettings.rainbow_offset + int(timeshift)) * (float(ledsettings.rainbow_scale) / 100)) & 255, "green")
                 blue = get_rainbow_colors(int((int(n) + ledsettings.rainbow_offset + int(timeshift)) * (float(ledsettings.rainbow_scale)/ 100)) & 255, "blue")  
 
-            if(int(note) != 1001):                
-                if(int(note) > 0):                    
-                    fading = (note / float(100)) / 10
-                    ledstrip.strip.setPixelColor((n), Color(int(int(green) * fading), int(int(red) * fading), int(int(blue) * fading)))
-                    ledstrip.set_adjacent_colors(n, Color(int(int(green) * fading), int(int(red) * fading), int(int(blue) * fading)))  
-                    keylist[n] = keylist[n] - ledsettings.fadingspeed
-                    if(keylist[n] <= 0):
-                        red_fading = int(ledsettings.get_backlight_color("Red"))* float(ledsettings.backlight_brightness_percent) / 100
-                        green_fading = int(ledsettings.get_backlight_color("Green")) * float(ledsettings.backlight_brightness_percent) / 100
-                        blue_fading = int(ledsettings.get_backlight_color("Blue")) * float(ledsettings.backlight_brightness_percent) / 100
-                        color = Color(int(green_fading),int(red_fading),int(blue_fading))                  
-                        ledstrip.strip.setPixelColor((n), color)
-                        ledstrip.set_adjacent_colors(n, color)   
-                else:                    
-                    keylist[n] = 0                   
+            if(ledsettings.mode == "Fading"):
+                if(int(note) != 1001):                
+                    if(int(note) > 0):                    
+                        fading = (note / float(100)) / 10
+                        ledstrip.strip.setPixelColor((n), Color(int(int(green) * fading), int(int(red) * fading), int(int(blue) * fading)))
+                        ledstrip.set_adjacent_colors(n, Color(int(int(green) * fading), int(int(red) * fading), int(int(blue) * fading)))  
+                        keylist[n] = keylist[n] - ledsettings.fadingspeed
+                        if(keylist[n] <= 0):
+                            red_fading = int(ledsettings.get_backlight_color("Red"))* float(ledsettings.backlight_brightness_percent) / 100
+                            green_fading = int(ledsettings.get_backlight_color("Green")) * float(ledsettings.backlight_brightness_percent) / 100
+                            blue_fading = int(ledsettings.get_backlight_color("Blue")) * float(ledsettings.backlight_brightness_percent) / 100
+                            color = Color(int(green_fading),int(red_fading),int(blue_fading))                  
+                            ledstrip.strip.setPixelColor((n), color)
+                            ledstrip.set_adjacent_colors(n, color)   
+                    else:                    
+                        keylist[n] = 0                   
                     
             if(ledsettings.mode == "Velocity"):
                 if(int(last_control_change) < pedal_deadzone):
@@ -1415,7 +1441,37 @@ while True:
                         color = Color(int(green_fading),int(red_fading),int(blue_fading))                  
                         ledstrip.strip.setPixelColor((n), color) 
                         ledstrip.set_adjacent_colors(n, color)  
-                        keylist[n] = 0                    
+                        keylist[n] = 0   
+
+            if(ledsettings.mode == "Shimmer"):
+                if(int(note) > 0):
+                    brightness_new=keylist[n]
+                    fading = (note / float(100)) / 10
+                    ledstrip.strip.setPixelColor((n), Color(int(int(green) * fading), int(int(red) * fading), int(int(blue) * fading)))
+                    ledstrip.set_adjacent_colors(n, Color(int(int(green) * fading), int(int(red) * fading), int(int(blue) * fading)))  
+
+                    if (keylist_fade[n] == "up"):
+                        brightness_new+=ledsettings.fadingspeed
+                        if(int(brightness_new) > 1000):
+                            keylist_fade[n] = "down"
+                            brightness_new = 1000
+                    else:
+                        brightness_new-=ledsettings.fadingspeed
+                        if(int(brightness_new) < 400):
+                            keylist_fade[n] = "up"
+                            brightness_new = 400
+                    
+                    keylist[n] = brightness_new
+                    if(keylist[n] <= 0):
+                        red_fading = int(ledsettings.get_backlight_color("Red"))* float(ledsettings.backlight_brightness_percent) / 100
+                        green_fading = int(ledsettings.get_backlight_color("Green")) * float(ledsettings.backlight_brightness_percent) / 100
+                        blue_fading = int(ledsettings.get_backlight_color("Blue")) * float(ledsettings.backlight_brightness_percent) / 100
+                        color = Color(int(green_fading),int(red_fading),int(blue_fading))                  
+                        ledstrip.strip.setPixelColor((n), color)
+                        ledstrip.set_adjacent_colors(n, color)   
+                else:                    
+                    keylist[n] = 0    
+
             n += 1        
     try:
         midipending = midiports.inport.iter_pending()
@@ -1472,6 +1528,8 @@ while True:
                 if(int(last_control_change) < pedal_deadzone):
                     keylist[(note - 20)*2 - note_offset] = 0
             else:
+                if(ledsettings.mode == "Shimmer"):
+                    keylist[(note - 20)*2 - note_offset] = 0
                 if(ledsettings.backlight_brightness > 0):
                     red = int(ledsettings.get_backlight_color("Red"))* (ledsettings.backlight_brightness_percent) / 100
                     green = int(ledsettings.get_backlight_color("Green")) * (ledsettings.backlight_brightness_percent) / 100
@@ -1499,7 +1557,7 @@ while True:
                 brightness = (100 / (float(velocity) / 127 ) )/ 100                 
             else:
                 brightness = 1
-            if(ledsettings.mode == "Fading"):
+            if(ledsettings.mode == "Fading" or ledsettings.mode == "Shimmer"):
                 keylist[(note - 20)*2 - note_offset] = 1001
             if(ledsettings.mode == "Velocity"):
                 keylist[(note - 20)*2 - note_offset] = 1000/float(brightness)
